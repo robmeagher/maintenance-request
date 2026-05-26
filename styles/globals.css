@@ -321,9 +321,9 @@ input[type="file"]::file-selector-button:hover {
   border-top: 1px solid var(--border);
   padding: 18px 28px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 18px;
-  flex-wrap: wrap;
   background: #f7f9fb;
 }
 .modal-ack {
@@ -338,7 +338,7 @@ input[type="file"]::file-selector-button:hover {
   font-style: italic;
 }
 .policy-actions .btn-submit {
-  margin-left: auto;
+  align-self: flex-end;
   font-size: 19px;
   padding: 12px 28px;
 }
