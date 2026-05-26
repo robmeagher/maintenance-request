@@ -342,3 +342,65 @@ input[type="file"]::file-selector-button:hover {
   font-size: 19px;
   padding: 12px 28px;
 }
+
+/* ---- PTE confirmation summary / prompt (main form) ---- */
+.pte-prompt {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 26px;
+}
+.pte-prompt span {
+  font-size: 18px;
+  color: #4a5160;
+}
+.pte-open-btn {
+  margin-bottom: 0;
+}
+.pte-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #eef6f0;
+  border: 1px solid #bfe0c9;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 26px;
+}
+.pte-check {
+  color: #1f8a4c;
+  font-size: 24px;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+.pte-summary-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f6b3c;
+}
+.pte-summary-detail {
+  font-size: 16px;
+  color: #4a5160;
+}
+.pte-summary .link-btn {
+  margin-left: auto;
+}
+
+/* ---- Access fields inside the modal ---- */
+.modal-access-fields {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin: 6px 0 4px;
+}
+.modal-access-fields .field {
+  margin-bottom: 0;
+}
+.modal-access-fields label {
+  font-size: 17px;
+}
+@media (max-width: 560px) {
+  .modal-access-fields { grid-template-columns: 1fr; }
+}
