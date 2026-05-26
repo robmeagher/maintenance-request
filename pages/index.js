@@ -127,7 +127,11 @@ export default function Home() {
   }
 
   const showScheduling = pte.permission === "No";
-  const showPteFields = pte.permission === "Yes" && pte.acknowledged;
+  const pteComplete =
+    pte.permission === "Yes" &&
+    pte.acknowledged &&
+    pte.accessType !== "" &&
+    pte.code !== "";
 
   return (
     <>
@@ -271,58 +275,38 @@ export default function Home() {
               </select>
             </div>
 
-            {/* PTE = Yes: acknowledgment + access fields */}
+            {/* PTE = Yes: read-only confirmation once the modal is completed */}
             {pte.permission === "Yes" && (
               <div className="pte-block">
-                <div className="ack-line">
-                  <input
-                    type="checkbox"
-                    id="ack"
-                    checked={pte.acknowledged}
-                    disabled={!scrolledToBottom && !pte.acknowledged}
-                    onChange={(e) => setPte({ ...pte, acknowledged: e.target.checked })}
-                  />
-                  <label htmlFor="ack" className="ack-label">
-                    Policy Acknowledgment <span className="req">*</span>
-                    {!pte.acknowledged && (
-                      <button
-                        type="button"
-                        className="link-btn"
-                        onClick={() => { setShowPolicyModal(true); }}
-                      >
-                        (view policy)
-                      </button>
-                    )}
-                  </label>
-                </div>
-
-                {showPteFields && (
-                  <div className="row">
+                {pteComplete ? (
+                  <div className="pte-summary">
+                    <span className="pte-check">&#10003;</span>
                     <div>
-                      <label>Smart Home or Key Lockbox? <span className="req">*</span></label>
-                      <select
-                        value={pte.accessType}
-                        onChange={(e) => setPte({ ...pte, accessType: e.target.value })}
-                        required
-                      >
-                        <option value="" disabled>Select</option>
-                        <option>Smart Home</option>
-                        <option>Key Lockbox</option>
-                      </select>
+                      <div className="pte-summary-title">
+                        Permission to Enter acknowledged
+                      </div>
+                      <div className="pte-summary-detail">
+                        {pte.accessType} &middot; Code ending {pte.code.slice(-2)}
+                      </div>
                     </div>
-                    <div>
-                      <label>Code <span className="req">*</span></label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={pte.code}
-                        onChange={(e) =>
-                          setPte({ ...pte, code: e.target.value.replace(/[^0-9]/g, "") })
-                        }
-                        required
-                      />
-                    </div>
+                    <button
+                      type="button"
+                      className="link-btn"
+                      onClick={() => setShowPolicyModal(true)}
+                    >
+                      Edit
+                    </button>
+                  </div>
+                ) : (
+                  <div className="pte-prompt">
+                    <span>You must review and acknowledge the entry policy.</span>
+                    <button
+                      type="button"
+                      className="btn-secondary pte-open-btn"
+                      onClick={() => setShowPolicyModal(true)}
+                    >
+                      Review Entry Policy
+                    </button>
                   </div>
                 )}
               </div>
@@ -372,7 +356,11 @@ export default function Home() {
             {pte.permission !== "" && (
               <>
                 <div className="submit-wrap">
-                  <button type="submit" className="btn-submit" disabled={submitting}>
+                  <button
+                    type="submit"
+                    className="btn-submit"
+                    disabled={submitting || (pte.permission === "Yes" && !pteComplete)}
+                  >
                     {submitting ? "Submitting..." : "Submit Request"}
                   </button>
                 </div>
@@ -432,10 +420,46 @@ export default function Home() {
                 />
                 <span>Policy Acknowledgment <span className="req">*</span></span>
               </label>
+
+              {pte.acknowledged && (
+                <div className="modal-access-fields">
+                  <div className="field">
+                    <label>Smart Home or Key Lockbox? <span className="req">*</span></label>
+                    <select
+                      value={pte.accessType}
+                      onChange={(e) => setPte({ ...pte, accessType: e.target.value, code: "" })}
+                      required
+                    >
+                      <option value="" disabled>Select</option>
+                      <option>Smart Home</option>
+                      <option>Key Lockbox</option>
+                    </select>
+                  </div>
+                  {pte.accessType !== "" && (
+                    <div className="field">
+                      <label>
+                        {pte.accessType === "Smart Home" ? "Smart Home Code" : "Lockbox Code"}{" "}
+                        <span className="req">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={pte.code}
+                        onChange={(e) =>
+                          setPte({ ...pte, code: e.target.value.replace(/[^0-9]/g, "") })
+                        }
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
               <button
                 type="button"
                 className="btn-submit"
-                disabled={!pte.acknowledged}
+                disabled={!pteComplete}
                 onClick={closePolicyModal}
               >
                 Continue
