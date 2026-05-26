@@ -12,7 +12,7 @@ export default function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { contact, issues, scheduling } = req.body || {};
+  const { contact, issues, scheduling, pte } = req.body || {};
 
   if (!contact || !Array.isArray(issues) || !scheduling) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -26,6 +26,25 @@ export default function handler(req, res) {
     if (!issue.criteria || !issue.category || !issue.description ||
         !issue.severity || !issue.reported) {
       return res.status(400).json({ error: `Issue ${n + 1} is incomplete` });
+    }
+  }
+
+  // Permission To Enter validation
+  if (!pte || !pte.permission) {
+    return res.status(400).json({ error: "Please answer the permission-to-enter question" });
+  }
+  if (pte.permission === "Yes") {
+    if (!pte.acknowledged) {
+      return res.status(400).json({ error: "Policy acknowledgment is required" });
+    }
+    if (!pte.accessType || !pte.code) {
+      return res.status(400).json({ error: "Access type and code are required" });
+    }
+  } else if (pte.permission === "No") {
+    for (const n of [1, 2, 3]) {
+      if (!scheduling[`date${n}`] || !scheduling[`time${n}`]) {
+        return res.status(400).json({ error: "Please provide all three preferred date/time slots" });
+      }
     }
   }
 
