@@ -286,7 +286,7 @@ export default function Home() {
                         Permission to Enter acknowledged
                       </div>
                       <div className="pte-summary-detail">
-                        {pte.accessType} &middot; Code ending {pte.code.slice(-2)}
+                        {pte.accessType} &middot; Code {pte.code}
                       </div>
                     </div>
                     <button
