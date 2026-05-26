@@ -267,7 +267,7 @@ export default function Home() {
 
             {/* Permission to Enter question */}
             <div className="field" style={{ maxWidth: 430 }}>
-              <label>Permission to Enter in your absence? <span className="req">*</span></label>
+              <label>Permission to Enter in Your Absence? <span className="req">*</span></label>
               <select value={pte.permission} onChange={handlePermissionChange} required>
                 <option value="" disabled>Select</option>
                 <option>Yes</option>
@@ -283,7 +283,7 @@ export default function Home() {
                     <span className="pte-check">&#10003;</span>
                     <div>
                       <div className="pte-summary-title">
-                        Permission to Enter acknowledged
+                        Permission to Enter Acknowledged
                       </div>
                       <div className="pte-summary-detail">
                         {pte.accessType} &middot; Code {pte.code}
