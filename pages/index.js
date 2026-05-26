@@ -22,6 +22,18 @@ const CATEGORIES = [
 const SEVERITIES = ["Emergency", "Urgent", "Routine", "Low"];
 const TIMES = ["8:00 AM - 12:00 PM", "12:00 PM - 4:00 PM", "4:00 PM - 6:00 PM"];
 
+const PTE_TERMS = [
+  "Unsupervised Minors: I will not leave minor children (under 18) unsupervised in the home during the planned maintenance visit.",
+  "Security Systems: I will disarm all alarms. I accept responsibility for any false alarm fees.",
+  "Pet Management: All pets will be secured in a crate or separate room prior to entry.",
+  "Workspace Access: I will ensure the area surrounding the repair (e.g., under sinks, HVAC closets) is clear of personal items to prevent damage or delays.",
+  "Documentation: I authorize maintenance to take photographs of the repair area for documentation purposes.",
+  "Personal Property: I understand that management is not liable for damage to personal property left in the immediate work area.",
+  "Entry Notice: I request that a Notice of Entry be left in a conspicuous place upon completion, noting the time of exit.",
+  "Visitation Time: I understand that the maintenance visit will occur between the hours of 8:00am and 6:00pm.",
+  "Entry: I have provided a valid key lockbox code / one time use smart lock code.",
+];
+
 function blankIssue() {
   return {
     criteria: "",
@@ -51,6 +63,17 @@ export default function Home() {
     date2: "", time2: "",
     date3: "", time3: "",
   });
+
+  // Permission To Enter state
+  const [pte, setPte] = useState({
+    permission: "",       // "" | "Yes" | "No"
+    acknowledged: false,  // policy checkbox
+    accessType: "",       // Smart Home | Key Lockbox
+    code: "",             // numeric code
+  });
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const [scrolledToBottom, setScrolledToBottom] = useState(false);
+
   const [status, setStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -63,6 +86,26 @@ export default function Home() {
   };
   const addIssue = () => setIssues([...issues, blankIssue()]);
 
+  function handlePermissionChange(e) {
+    const val = e.target.value;
+    setPte({ ...pte, permission: val });
+    if (val === "Yes") {
+      setScrolledToBottom(false);
+      setShowPolicyModal(true);
+    }
+  }
+
+  function handleModalScroll(e) {
+    const el = e.target;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 8) {
+      setScrolledToBottom(true);
+    }
+  }
+
+  function closePolicyModal() {
+    setShowPolicyModal(false);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setSubmitting(true);
@@ -71,7 +114,7 @@ export default function Home() {
       const res = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contact, issues, scheduling }),
+        body: JSON.stringify({ contact, issues, scheduling, pte }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed");
@@ -82,6 +125,9 @@ export default function Home() {
       setSubmitting(false);
     }
   }
+
+  const showScheduling = pte.permission === "No";
+  const showPteFields = pte.permission === "Yes" && pte.acknowledged;
 
   return (
     <>
@@ -215,56 +261,189 @@ export default function Home() {
               Add Another Issue
             </button>
 
-            <div className="scheduling">
-              <h2 className="section">Preferred Scheduling</h2>
-              <p className="intro">
-                Please select three different preferred times and days within the
-                normal business week, Monday through Friday, to assist us in
-                scheduling your work order. Thank you.
-              </p>
+            {/* Permission to Enter question */}
+            <div className="field" style={{ maxWidth: 430 }}>
+              <label>Permission to Enter in your absence? <span className="req">*</span></label>
+              <select value={pte.permission} onChange={handlePermissionChange} required>
+                <option value="" disabled>Select</option>
+                <option>Yes</option>
+                <option>No</option>
+              </select>
+            </div>
 
-              {[1, 2, 3].map((n) => {
-                const ord = n === 1 ? "1st" : n === 2 ? "2nd" : "3rd";
-                return (
-                  <div className="row" key={n}>
+            {/* PTE = Yes: acknowledgment + access fields */}
+            {pte.permission === "Yes" && (
+              <div className="pte-block">
+                <div className="ack-line">
+                  <input
+                    type="checkbox"
+                    id="ack"
+                    checked={pte.acknowledged}
+                    disabled={!scrolledToBottom && !pte.acknowledged}
+                    onChange={(e) => setPte({ ...pte, acknowledged: e.target.checked })}
+                  />
+                  <label htmlFor="ack" className="ack-label">
+                    Policy Acknowledgment <span className="req">*</span>
+                    {!pte.acknowledged && (
+                      <button
+                        type="button"
+                        className="link-btn"
+                        onClick={() => { setShowPolicyModal(true); }}
+                      >
+                        (view policy)
+                      </button>
+                    )}
+                  </label>
+                </div>
+
+                {showPteFields && (
+                  <div className="row">
                     <div>
-                      <label>{ord} Preferred Date <span className="req">*</span></label>
-                      <input
-                        type="date"
-                        value={scheduling[`date${n}`]}
-                        onChange={setS(`date${n}`)}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label>{ord} Preferred Time <span className="req">*</span></label>
+                      <label>Smart Home or Key Lockbox? <span className="req">*</span></label>
                       <select
-                        value={scheduling[`time${n}`]}
-                        onChange={setS(`time${n}`)}
+                        value={pte.accessType}
+                        onChange={(e) => setPte({ ...pte, accessType: e.target.value })}
                         required
                       >
                         <option value="" disabled>Select</option>
-                        {TIMES.map((t) => <option key={t}>{t}</option>)}
+                        <option>Smart Home</option>
+                        <option>Key Lockbox</option>
                       </select>
                     </div>
+                    <div>
+                      <label>Code <span className="req">*</span></label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={pte.code}
+                        onChange={(e) =>
+                          setPte({ ...pte, code: e.target.value.replace(/[^0-9]/g, "") })
+                        }
+                        required
+                      />
+                    </div>
                   </div>
-                );
-              })}
-
-              <div className="submit-wrap">
-                <button type="submit" className="btn-submit" disabled={submitting}>
-                  {submitting ? "Submitting..." : "Submit Request"}
-                </button>
+                )}
               </div>
-              {status && (
-                <div className={`status-msg ${status.ok ? "ok" : "err"}`}>
-                  {status.msg}
+            )}
+
+            {/* PTE = No: Preferred Scheduling */}
+            {showScheduling && (
+              <div className="scheduling">
+                <h2 className="section">Preferred Scheduling</h2>
+                <p className="intro">
+                  Please select three different preferred times and days within the
+                  normal business week, Monday through Friday, to assist us in
+                  scheduling your work order. Thank you.
+                </p>
+
+                {[1, 2, 3].map((n) => {
+                  const ord = n === 1 ? "1st" : n === 2 ? "2nd" : "3rd";
+                  return (
+                    <div className="row" key={n}>
+                      <div>
+                        <label>{ord} Preferred Date <span className="req">*</span></label>
+                        <input
+                          type="date"
+                          value={scheduling[`date${n}`]}
+                          onChange={setS(`date${n}`)}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label>{ord} Preferred Time <span className="req">*</span></label>
+                        <select
+                          value={scheduling[`time${n}`]}
+                          onChange={setS(`time${n}`)}
+                          required
+                        >
+                          <option value="" disabled>Select</option>
+                          {TIMES.map((t) => <option key={t}>{t}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Submit shows once a path is chosen */}
+            {pte.permission !== "" && (
+              <>
+                <div className="submit-wrap">
+                  <button type="submit" className="btn-submit" disabled={submitting}>
+                    {submitting ? "Submitting..." : "Submit Request"}
+                  </button>
                 </div>
-              )}
-            </div>
+                {status && (
+                  <div className={`status-msg ${status.ok ? "ok" : "err"}`}>
+                    {status.msg}
+                  </div>
+                )}
+              </>
+            )}
           </form>
         </div>
       </div>
+
+      {/* Policy modal */}
+      {showPolicyModal && (
+        <div className="overlay" role="dialog" aria-modal="true">
+          <div className="policy-modal">
+            <div className="policy-header">
+              <h2>Permission to Enter (PTE) &amp; Maintenance Acknowledgement</h2>
+            </div>
+            <div className="policy-scroll" onScroll={handleModalScroll}>
+              <p className="policy-addr">
+                <strong>Property Address:</strong> {contact.address}
+              </p>
+              <p>
+                I grant Maymont Homes and their authorized technicians and or
+                third-party vendors permission to enter my residence for
+                maintenance purposes.
+              </p>
+              <p><strong>Maymont Homes Terms and Conditions:</strong></p>
+              <ul className="policy-list">
+                {PTE_TERMS.map((t, i) => {
+                  const idx = t.indexOf(":");
+                  const head = t.slice(0, idx);
+                  const rest = t.slice(idx + 1);
+                  return (
+                    <li key={i}><strong>{head}:</strong>{rest}</li>
+                  );
+                })}
+              </ul>
+              <p className="policy-foot">
+                By checking the &ldquo;Policy Acknowledgement&rdquo; checkbox, I
+                acknowledge and agree to all of the terms and conditions above.
+              </p>
+            </div>
+            <div className="policy-actions">
+              {!scrolledToBottom && (
+                <span className="scroll-hint">Scroll to the bottom to continue</span>
+              )}
+              <label className="ack-line modal-ack">
+                <input
+                  type="checkbox"
+                  checked={pte.acknowledged}
+                  disabled={!scrolledToBottom}
+                  onChange={(e) => setPte({ ...pte, acknowledged: e.target.checked })}
+                />
+                <span>Policy Acknowledgment <span className="req">*</span></span>
+              </label>
+              <button
+                type="button"
+                className="btn-submit"
+                disabled={!pte.acknowledged}
+                onClick={closePolicyModal}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
